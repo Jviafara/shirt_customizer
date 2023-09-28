@@ -19,17 +19,17 @@ import state from '../store';
 const Customizer = () => {
     const snap = useSnapshot(state);
     const [file, setFile] = useState('');
-    const [promp, setPromp] = useState('');
+    const [prompt, setPrompt] = useState('');
     const [generatingImg, setGeneratingImg] = useState(false);
-    const [actieEdiotorTab, setActieEdiotorTab] = useState('');
-    const [activeFiltertab, setActiveFiltertab] = useState({
+    const [activeEditorTab, setActiveEditorTab] = useState('');
+    const [activeFilterTab, setActiveFilterTab] = useState({
         logoShirt: true,
         stilesShirt: false,
     });
 
     //SHOW ACTIVE TAB
     const generateTabContent = () => {
-        switch (actieEdiotorTab) {
+        switch (activeEditorTab) {
             case 'colorpicker':
                 return <ColorPicker />;
             case 'filepicker':
@@ -41,8 +41,28 @@ const Customizer = () => {
                     />
                 );
             case 'aipicker':
-                return <AIPicker />;
+                return (
+                    <AIPicker
+                        prompt={prompt}
+                        setPrompt={setPrompt}
+                        generatingImg={generatingImg}
+                        handleSubmit={handleSubmit}
+                    />
+                );
             default:
+        }
+    };
+
+    const handleSubmit = async (type) => {
+        if (!prompt) return alert('Please enter a prompt');
+
+        try {
+            //Call our backend to generate an image
+        } catch (error) {
+            alert(error);
+        } finally {
+            setGeneratingImg(false);
+            setActiveEditorTab('');
         }
     };
 
@@ -51,30 +71,38 @@ const Customizer = () => {
 
         state[decalType.stateProperty] = result;
 
-        if (!activeFiltertab[decalType.filterTab]) {
+        if (!activeFilterTab[decalType.filterTab]) {
             handleActiveFilterTab(decalType.filterTab);
         }
     };
 
     const handleActiveFilterTab = (tabName) => {
         switch (tabName) {
-            case 'logo':
-                state.isLogoTexture = !activeFiltertab[tabName];
+            case 'logoShirt':
+                state.isLogoTexture = !activeFilterTab[tabName];
                 break;
-            case 'styleShirt':
-                state.isFullTexture = !activeFiltertab[tabName];
+            case 'stylishShirt':
+                state.isFullTexture = !activeFilterTab[tabName];
                 break;
-
             default:
                 state.isLogoTexture = true;
                 state.isFullTexture = false;
+                break;
         }
+
+        // after setting the state, activeFilterTab is updated
+        setActiveFilterTab((prevState) => {
+            return {
+                ...prevState,
+                [tabName]: !prevState[tabName],
+            };
+        });
     };
 
-    const readFile = () => {
+    const readFile = (type) => {
         reader(file).then((result) => {
             handleDecals(type, result);
-            setActieEdiotorTab('');
+            setActiveEditorTab('');
         });
     };
 
@@ -93,7 +121,7 @@ const Customizer = () => {
                                         key={tab.name}
                                         tab={tab}
                                         handleClick={() =>
-                                            setActieEdiotorTab(tab.name)
+                                            setActiveEditorTab(tab.name)
                                         }
                                     />
                                 ))}
@@ -119,8 +147,10 @@ const Customizer = () => {
                                 key={tab.name}
                                 tab={tab}
                                 isFilterTab
-                                isActiveTab=""
-                                handleClick={() => {}}
+                                isActiveTab={activeFilterTab[tab.name]}
+                                handleClick={() => {
+                                    handleActiveFilterTab(tab.name);
+                                }}
                             />
                         ))}
                     </motion.div>
